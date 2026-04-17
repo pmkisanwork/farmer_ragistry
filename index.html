@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Farmer Registry Service – All Work Online</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 :root {
   --green-dark: #1B5E20;
@@ -40,6 +41,24 @@ nav{background:var(--green-dark);position:sticky;top:0;z-index:100;box-shadow:0 
 .mobile-menu{display:none;flex-direction:column;background:#1a4a1e;padding:12px 20px 20px;}
 .mobile-menu a{color:rgba(255,255,255,0.85);text-decoration:none;font-size:0.95rem;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);display:block;}
 .mobile-menu.open{display:flex;}
+
+/* ── OTP SCREEN ── */
+.otp-screen{text-align:center;padding:10px 0 4px;}
+.otp-screen .otp-icon{font-size:2.8rem;margin-bottom:8px;}
+.otp-screen h2{color:var(--green-dark);font-size:1.15rem;font-weight:800;margin-bottom:4px;}
+.otp-screen p{color:var(--muted);font-size:0.82rem;margin-bottom:18px;line-height:1.6;}
+.otp-email-badge{display:inline-block;background:var(--green-pale);border:2px solid #C8E6C9;border-radius:8px;padding:6px 14px;font-size:0.8rem;font-weight:700;color:var(--green-dark);margin-bottom:18px;}
+.otp-inputs{display:flex;gap:10px;justify-content:center;margin-bottom:18px;}
+.otp-inputs input{width:46px;height:54px;text-align:center;font-size:1.4rem;font-weight:800;border:2px solid #C8E6C9;border-radius:10px;outline:none;font-family:'Poppins',sans-serif;color:var(--green-dark);transition:border-color .2s;background:#FAFFFE;}
+.otp-inputs input:focus{border-color:var(--green);}
+.otp-verify-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--green-dark),var(--green-mid));color:#fff;border:none;border-radius:12px;font-size:0.95rem;font-weight:800;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .2s;box-shadow:0 4px 16px rgba(27,94,32,0.3);}
+.otp-verify-btn:hover{transform:translateY(-2px);}
+.otp-verify-btn:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.otp-resend{margin-top:14px;font-size:0.78rem;color:var(--muted);}
+.otp-resend a{color:var(--green);font-weight:700;cursor:pointer;text-decoration:underline;}
+.otp-err{display:none;background:#FEE2E2;color:#991B1B;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-weight:700;margin-bottom:12px;}
+.otp-success-msg{display:none;background:#D1FAE5;color:#065F46;border-radius:8px;padding:8px 12px;font-size:0.82rem;font-weight:700;margin-bottom:12px;}
+.otp-timer{font-size:0.78rem;color:#E65100;font-weight:700;margin-top:8px;}
 
 /* ── TICKER ── */
 .ticker{background:var(--yellow);padding:8px 0;overflow:hidden;position:relative;height:34px;}
@@ -643,9 +662,72 @@ footer a{color:var(--yellow);}
       <div class="err" id="pwErr">❌ Galat password!</div>
       <input type="password" id="pwInput" placeholder="Password" onkeydown="if(event.key==='Enter')checkPw()">
       <br><br>
-      <button onclick="checkPw()">Login Karein →</button>
+      <button onclick="checkPw()" id="pwLoginBtn">Login Karein →</button>
       <br><br>
       <a onclick="closeAdmin()" style="color:#888;font-size:0.8rem;cursor:pointer;">✕ Band Karein</a>
+    </div>
+  </div>
+
+  <!-- OTP VERIFICATION SCREEN -->
+  <div class="admin-panel" id="otpPanel" style="display:none;">
+    <div style="padding:36px 28px 32px;text-align:center;max-width:420px;margin:0 auto;">
+
+      <!-- Header Icon -->
+      <div style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#1B5E20,#43A047);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 18px;box-shadow:0 8px 24px rgba(27,94,32,0.3);">📧</div>
+
+      <h2 style="font-size:1.3rem;font-weight:800;color:#0A1628;margin-bottom:6px;">Email Verification</h2>
+      <p style="color:#5a6a6a;font-size:0.83rem;line-height:1.6;margin-bottom:16px;">Aapke email par ek <strong>6-digit OTP</strong> bheja gaya hai</p>
+
+      <!-- Email Badge -->
+      <div style="display:inline-flex;align-items:center;gap:8px;background:#E8F5E9;border:2px solid #A5D6A7;border-radius:30px;padding:8px 18px;font-size:0.82rem;font-weight:700;color:#1B5E20;margin-bottom:22px;">
+        <span>✉️</span>
+        <span id="otpEmailBadge">shivamgupta18@zohomail.in</span>
+      </div>
+
+      <!-- Alert boxes -->
+      <div class="otp-err" id="otpErr" style="display:none;background:#FEE2E2;color:#991B1B;border-radius:10px;padding:10px 14px;font-size:0.82rem;font-weight:700;margin-bottom:14px;border-left:4px solid #EF4444;">❌ Galat OTP! Dobara try karein.</div>
+      <div class="otp-success-msg" id="otpSuccessMsg" style="display:none;background:#D1FAE5;color:#065F46;border-radius:10px;padding:10px 14px;font-size:0.82rem;font-weight:700;margin-bottom:14px;border-left:4px solid #10B981;">✅ OTP sahi hai! Login ho raha hai...</div>
+
+      <!-- OTP Inputs -->
+      <div style="display:flex;gap:10px;justify-content:center;margin-bottom:22px;">
+        <input type="text" inputmode="numeric" maxlength="1" id="otp1" onfocus="otpInputFocus(this)" onblur="otpInputBlur(this)" oninput="otpMove(this,null,'otp2')" onkeydown="otpBack(event,this,null,'otp1')"
+          style="width:48px;height:56px;text-align:center;font-size:1.5rem;font-weight:800;border:2.5px solid #C8E6C9;border-radius:12px;outline:none;font-family:'Poppins',sans-serif;color:#1B5E20;background:#F9FFFE;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <input type="text" inputmode="numeric" maxlength="1" id="otp2" onfocus="otpInputFocus(this)" onblur="otpInputBlur(this)" oninput="otpMove(this,'otp1','otp3')" onkeydown="otpBack(event,this,'otp1','otp2')"
+          style="width:48px;height:56px;text-align:center;font-size:1.5rem;font-weight:800;border:2.5px solid #C8E6C9;border-radius:12px;outline:none;font-family:'Poppins',sans-serif;color:#1B5E20;background:#F9FFFE;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <input type="text" inputmode="numeric" maxlength="1" id="otp3" onfocus="otpInputFocus(this)" onblur="otpInputBlur(this)" oninput="otpMove(this,'otp2','otp4')" onkeydown="otpBack(event,this,'otp2','otp3')"
+          style="width:48px;height:56px;text-align:center;font-size:1.5rem;font-weight:800;border:2.5px solid #C8E6C9;border-radius:12px;outline:none;font-family:'Poppins',sans-serif;color:#1B5E20;background:#F9FFFE;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <div style="display:flex;align-items:center;color:#ccc;font-size:1.2rem;font-weight:700;">—</div>
+        <input type="text" inputmode="numeric" maxlength="1" id="otp4" onfocus="otpInputFocus(this)" onblur="otpInputBlur(this)" oninput="otpMove(this,'otp3','otp5')" onkeydown="otpBack(event,this,'otp3','otp4')"
+          style="width:48px;height:56px;text-align:center;font-size:1.5rem;font-weight:800;border:2.5px solid #C8E6C9;border-radius:12px;outline:none;font-family:'Poppins',sans-serif;color:#1B5E20;background:#F9FFFE;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <input type="text" inputmode="numeric" maxlength="1" id="otp5" onfocus="otpInputFocus(this)" onblur="otpInputBlur(this)" oninput="otpMove(this,'otp4','otp6')" onkeydown="otpBack(event,this,'otp4','otp5')"
+          style="width:48px;height:56px;text-align:center;font-size:1.5rem;font-weight:800;border:2.5px solid #C8E6C9;border-radius:12px;outline:none;font-family:'Poppins',sans-serif;color:#1B5E20;background:#F9FFFE;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+        <input type="text" inputmode="numeric" maxlength="1" id="otp6" onfocus="otpInputFocus(this)" onblur="otpInputBlur(this)" oninput="otpMove(this,'otp5',null)" onkeydown="otpBack(event,this,'otp5','otp6')"
+          style="width:48px;height:56px;text-align:center;font-size:1.5rem;font-weight:800;border:2.5px solid #C8E6C9;border-radius:12px;outline:none;font-family:'Poppins',sans-serif;color:#1B5E20;background:#F9FFFE;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      </div>
+
+      <!-- Verify Button -->
+      <button id="otpVerifyBtn" onclick="verifyOtp()"
+        style="width:100%;padding:14px;background:linear-gradient(135deg,#1B5E20,#388E3C);color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;font-family:'Poppins',sans-serif;box-shadow:0 6px 20px rgba(27,94,32,0.35);transition:all .2s;margin-bottom:18px;">
+        🔓 Verify & Login Karein
+      </button>
+
+      <!-- Timer & Resend -->
+      <div style="background:#F8F9FA;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
+        <div id="otpTimerBox" style="display:flex;align-items:center;justify-content:center;gap:8px;font-size:0.82rem;color:#5a6a6a;">
+          <span>⏱️</span>
+          <span id="otpTimer" style="font-weight:700;color:#E65100;"></span>
+        </div>
+        <div style="font-size:0.8rem;color:#888;margin-top:4px;">
+          OTP nahi aaya? <a id="resendLink" onclick="resendOtp()" style="color:#1B5E20;font-weight:700;cursor:pointer;text-decoration:underline;">Dobara bhejein</a>
+        </div>
+      </div>
+
+      <!-- Security note -->
+      <div style="background:#FFF8E1;border:1px solid #FFE082;border-radius:10px;padding:10px 14px;font-size:0.76rem;color:#5D4037;line-height:1.6;margin-bottom:16px;">
+        🔒 <strong>Suraksha tip:</strong> OTP sirf aapke registered email par bheja gaya hai. Kisi ke saath share na karein।
+      </div>
+
+      <a onclick="backToPassword()" style="color:#888;font-size:0.78rem;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">← Password screen par wapas jaao</a>
     </div>
   </div>
 
@@ -997,7 +1079,8 @@ async function checkStatus() {
 // ═══════════════════════════════
 function openAdmin() {
   const loggedIn = sessionStorage.getItem('farmer_admin') === '1';
-  document.getElementById('pwPanel').style.display     = loggedIn ? 'none'  : 'block';
+  document.getElementById('pwPanel').style.display      = loggedIn ? 'none'  : 'block';
+  document.getElementById('otpPanel').style.display     = 'none';
   document.getElementById('adminContent').style.display = loggedIn ? 'block' : 'none';
   document.getElementById('adminOverlay').classList.add('open');
   if (loggedIn) loadSubmissions();
@@ -1007,28 +1090,217 @@ function closeAdmin() {
   document.getElementById('adminOverlay').classList.remove('open');
 }
 
+// ═══════════════════════════════
+// EMAILJS + OTP CONFIG
+// ═══════════════════════════════
+const EMAILJS_SERVICE  = 'service_bol8ldq';
+const EMAILJS_TEMPLATE = 'template_zegeumr';
+const EMAILJS_PUBLIC   = 'oxyRIaQ-IoizhZPAG';
+const ADMIN_EMAIL      = 'shivamgupta18@zohomail.in';
+
+let currentOtp        = '';
+let otpTimerInterval  = null;
+let otpResendSeconds  = 0;
+
+(function initEmailJS() {
+  emailjs.init(EMAILJS_PUBLIC);
+})();
+
+function generateOtp() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendOtpEmail(otp) {
+  return emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+    email    : ADMIN_EMAIL,
+    to_email : ADMIN_EMAIL,
+    reply_to : ADMIN_EMAIL,
+    otp_code : otp,
+    otp      : otp,
+    passcode : otp,
+    to_name  : 'Shivam Gupta',
+    name     : 'Shivam Gupta',
+    message  : 'Aapka Admin Login OTP hai: ' + otp + ' — Farmer Registry Service'
+  });
+}
+
+function startOtpTimer(seconds) {
+  clearInterval(otpTimerInterval);
+  otpResendSeconds = seconds;
+  const timerEl  = document.getElementById('otpTimer');
+  const resendEl = document.getElementById('resendLink');
+  resendEl.style.pointerEvents = 'none';
+  resendEl.style.opacity = '0.4';
+
+  otpTimerInterval = setInterval(() => {
+    otpResendSeconds--;
+    if (otpResendSeconds <= 0) {
+      clearInterval(otpTimerInterval);
+      timerEl.textContent = '';
+      resendEl.style.pointerEvents = 'auto';
+      resendEl.style.opacity = '1';
+    } else {
+      timerEl.textContent = otpResendSeconds + ' second mein resend hoga';
+    }
+  }, 1000);
+  timerEl.textContent = seconds + ' second mein resend hoga';
+}
+
+function otpMove(el, prevId, nextId) {
+  el.value = el.value.replace(/[^0-9]/g, '');
+  el.style.borderColor = el.value ? '#1B5E20' : '#C8E6C9';
+  el.style.background  = el.value ? '#E8F5E9' : '#F9FFFE';
+  if (el.value && nextId) document.getElementById(nextId).focus();
+}
+
+function otpInputFocus(el) {
+  el.style.borderColor = '#1B5E20';
+  el.style.boxShadow   = '0 0 0 3px rgba(27,94,32,0.15)';
+}
+
+function otpInputBlur(el) {
+  el.style.borderColor = el.value ? '#1B5E20' : '#C8E6C9';
+  el.style.boxShadow   = el.value ? 'none' : '0 2px 8px rgba(0,0,0,0.06)';
+}
+
+function otpBack(e, el, prevId, currId) {
+  if (e.key === 'Backspace' && !el.value && prevId) {
+    document.getElementById(prevId).focus();
+  }
+}
+
+function clearOtpInputs() {
+  ['otp1','otp2','otp3','otp4','otp5','otp6'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('otp1').focus();
+}
+
+function getEnteredOtp() {
+  return ['otp1','otp2','otp3','otp4','otp5','otp6']
+    .map(id => document.getElementById(id).value).join('');
+}
+
 function checkPw() {
-  const val = document.getElementById('pwInput').value;
-  if (val === getAdminPw()) {
+  const val   = document.getElementById('pwInput').value;
+  const btn   = document.getElementById('pwLoginBtn');
+  const errEl = document.getElementById('pwErr');
+
+  if (val !== getAdminPw()) {
+    errEl.style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    setTimeout(() => errEl.style.display = 'none', 3000);
+    return;
+  }
+
+  // Password sahi hai – OTP bhejo
+  btn.disabled    = true;
+  btn.textContent = '⏳ OTP bheja ja raha hai...';
+  errEl.style.display = 'none';
+
+  currentOtp = generateOtp();
+
+  sendOtpEmail(currentOtp)
+    .then(() => {
+      btn.disabled    = false;
+      btn.textContent = 'Login Karein →';
+      document.getElementById('pwPanel').style.display  = 'none';
+      document.getElementById('otpPanel').style.display = 'block';
+      clearOtpInputs();
+      document.getElementById('otpErr').style.display        = 'none';
+      document.getElementById('otpSuccessMsg').style.display = 'none';
+      document.getElementById('otpEmailBadge').textContent   = ADMIN_EMAIL;
+      startOtpTimer(60);
+    })
+    .catch(err => {
+      btn.disabled    = false;
+      btn.textContent = 'Login Karein →';
+      const msg = (err && err.text) ? err.text : (err && err.message) ? err.message : JSON.stringify(err);
+      errEl.textContent   = '⚠️ OTP email nahi gaya: ' + msg;
+      errEl.style.display = 'block';
+    });
+}
+
+function verifyOtp() {
+  const entered = getEnteredOtp();
+  const errEl   = document.getElementById('otpErr');
+  const sucEl   = document.getElementById('otpSuccessMsg');
+  const btn     = document.getElementById('otpVerifyBtn');
+
+  if (entered.length < 6) {
+    errEl.textContent   = '⚠️ Poora 6-digit OTP bharein!';
+    errEl.style.display = 'block';
+    setTimeout(() => errEl.style.display = 'none', 3000);
+    return;
+  }
+
+  if (entered !== currentOtp) {
+    errEl.textContent   = '❌ Galat OTP! Dobara try karein.';
+    errEl.style.display = 'block';
+    clearOtpInputs();
+    setTimeout(() => errEl.style.display = 'none', 3000);
+    return;
+  }
+
+  // OTP sahi!
+  errEl.style.display = 'none';
+  sucEl.style.display = 'block';
+  btn.disabled        = true;
+  clearInterval(otpTimerInterval);
+  currentOtp          = ''; // invalidate
+
+  setTimeout(() => {
+    sucEl.style.display = 'none';
+    document.getElementById('otpPanel').style.display    = 'none';
+    document.getElementById('pwInput').value             = '';
     sessionStorage.setItem('farmer_admin', '1');
-    document.getElementById('pwPanel').style.display     = 'none';
     document.getElementById('adminContent').style.display = 'block';
     loadSubmissions();
-    // Welcome toast
     showAdminAlert('🙏 Welcome Shivam Gupta ji! Aap successfully login ho gaye।', 'ok');
-  } else {
-    const err = document.getElementById('pwErr');
-    err.style.display = 'block';
-    document.getElementById('pwInput').value = '';
-    setTimeout(() => err.style.display = 'none', 3000);
+    btn.disabled = false;
+  }, 1200);
+}
+
+async function resendOtp() {
+  const resendEl = document.getElementById('resendLink');
+  resendEl.style.pointerEvents = 'none';
+  resendEl.style.opacity       = '0.4';
+  resendEl.textContent         = 'Bheja ja raha hai...';
+
+  currentOtp = generateOtp();
+
+  try {
+    await sendOtpEmail(currentOtp);
+    clearOtpInputs();
+    document.getElementById('otpErr').style.display        = 'none';
+    document.getElementById('otpSuccessMsg').style.display = 'none';
+    startOtpTimer(60);
+  } catch(e) {
+    document.getElementById('otpErr').textContent   = '⚠️ OTP dobara bhejne mein problem! Try again.';
+    document.getElementById('otpErr').style.display = 'block';
+    setTimeout(() => document.getElementById('otpErr').style.display = 'none', 4000);
+    resendEl.style.pointerEvents = 'auto';
+    resendEl.style.opacity       = '1';
   }
+  resendEl.textContent = 'Dobara bhejein';
+}
+
+function backToPassword() {
+  clearInterval(otpTimerInterval);
+  currentOtp = '';
+  document.getElementById('otpPanel').style.display  = 'none';
+  document.getElementById('pwPanel').style.display   = 'block';
+  document.getElementById('pwInput').value            = '';
 }
 
 function adminLogout() {
   sessionStorage.removeItem('farmer_admin');
+  clearInterval(otpTimerInterval);
+  currentOtp = '';
   document.getElementById('pwInput').value = '';
   document.getElementById('adminContent').style.display = 'none';
-  document.getElementById('pwPanel').style.display = 'block';
+  document.getElementById('otpPanel').style.display     = 'none';
+  document.getElementById('pwPanel').style.display      = 'block';
 }
 
 function updateAdminStats() {
@@ -1052,6 +1324,7 @@ function renderTable() {
   const noEl  = document.getElementById('noSubm');
 
   if (!list.length) {
+
     tbody.innerHTML = '';
     noEl.style.display = 'block';
     return;
